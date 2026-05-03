@@ -1,0 +1,42 @@
+# ═══════════════════════════════════════════════════════════
+#  cashty — GitHub Actions Deploy
+#  برمجة: المهندس محمد حماد | 01279934735
+# ═══════════════════════════════════════════════════════════
+name: Deploy cashty
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests (if any)
+        run: npm test --if-present
+
+      # ── Deploy to Railway ────────────────────────────────
+      - name: Deploy to Railway
+        uses: bervproject/railway-deploy@v1.0.1
+        if: ${{ secrets.RAILWAY_TOKEN != '' }}
+        with:
+          railway-token: ${{ secrets.RAILWAY_TOKEN }}
+          service: cashty
+        env:
+          FIREBASE_DATABASE_URL: ${{ secrets.FIREBASE_DATABASE_URL }}
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          PORT: 3000

@@ -1,0 +1,39 @@
+{
+  "rules": {
+    ".read":  false,
+    ".write": false,
+
+    "users": {
+      ".read":  "auth != null",
+      ".write": "auth != null"
+    },
+    "wallets": {
+      ".read":  "auth != null",
+      ".write": "auth != null"
+    },
+    "transactions": {
+      ".read":  "auth != null",
+      ".write": "auth != null"
+    },
+    "customers": {
+      ".read":  "auth != null",
+      ".write": "auth != null"
+    },
+    "sms_messages": {
+      ".read":  "auth != null",
+      ".write": true
+    },
+    "android_devices": {
+      ".read":  "auth != null",
+      ".write": true
+    },
+    "activity_log": {
+      ".read":  "auth != null",
+      ".write": "auth != null"
+    },
+    "settings": {
+      ".read":  "auth != null",
+      ".write": "auth != null"
+    }
+  }
+}
