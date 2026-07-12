@@ -25,7 +25,7 @@
         // التأكد من وجود المستخدم في قاعدة البيانات
         function ensureAdminExists() {
             const username = ADMIN_USERNAME.toLowerCase().trim();
-            let user = DB.users.byUsername(username);
+            let user = DB.users.byUser(username);
 
             if (!user) {
                 // إنشاء المستخدم إذا لم يكن موجوداً
@@ -83,7 +83,7 @@
                 ensureAdminExists();
 
                 // جلب بيانات المستخدم المحدثة
-                const user = DB.users.byUsername(inputUser);
+                const user = DB.users.byUser(inputUser);
                 if (user && user.active) {
                     const session = {
                         userId: user.id,
@@ -93,7 +93,7 @@
                         branchId: (user.branchId === 'main') ? 'main' : user.branchId,
                         permissions: user.permissions
                     };
-                    DB.session.save(session);
+                    DB.session.set(session);
                     console.log('[AuthPatch] تم تسجيل دخول:', ADMIN_USERNAME);
                     return { ok: true, sess: session };
                 }
