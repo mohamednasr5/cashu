@@ -1,8 +1,0 @@
-node_modules/
-.env
-data/
-*.db
-*.sqlite
-*.log
-.DS_Store
-dist/
