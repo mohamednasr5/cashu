@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>نظام مبيعات فودافون كاش</title>
+  <meta name="description" content="نظام متكامل لإدارة وحصر مبيعات فودافون كاش - سحب وإرسال أموال وكروت شحن">
+
+  <!-- ===== PWA Meta Tags ===== -->
+  <meta name="theme-color" content="#e60012">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="فودافون كاش">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="application-name" content="فودافون كاش">
+  <meta name="msapplication-TileColor" content="#e60012">
+  <meta name="msapplication-TileImage" content="icons/icon-144x144.png">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
+  <!-- Apply saved theme BEFORE render to prevent flash -->
+  <script>
+    (function(){
+      if(localStorage.getItem('vc_theme')==='light')
+        document.documentElement.classList.add('light');
+    })();
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="mobile-nav.css">
+</head>
+<body>
+
+  <!-- ===== UPDATE NOTIFICATION BANNER ===== -->
+  <div id="update-banner" role="alert" aria-live="polite">
+    <div class="update-banner-inner">
+      <div class="update-banner-glow"></div>
+      <div class="update-banner-left">
+        <div class="update-banner-icon">
+          <i class="fas fa-arrow-up-from-bracket"></i>
+        </div>
+        <div class="update-banner-text">
+          <div class="update-banner-title">
+            <span>🎉 يوجد تحديث جديد متاح!</span>
+            <span class="update-version-badge" id="update-version-badge">v1.1.0</span>
+          </div>
+          <div class="update-banner-notes" id="update-banner-notes"></div>
+        </div>
+      </div>
+      <div class="update-banner-actions">
+        <button class="btn-update-now" id="btn-update-now" onclick="Updater.doUpdate()">
+          <i class="fas fa-rotate-right"></i>
+          <span>تحديث الآن</span>
+        </button>
+        <button class="btn-update-later" id="btn-update-later" onclick="Updater.remindLater()">
+          <i class="fas fa-clock"></i>
+          <span>لاحقًا</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== LOGIN PAGE ===== -->
+  <div id="pg-login">
+    <div class="login-bg-shapes">
+      <div class="shape s1"></div>
+      <div class="shape s2"></div>
+      <div class="shape s3"></div>
+    </div>
+    <div class="login-card">
+      <div class="login-logo">
+        <div class="logo-icon"><i class="fas fa-mobile-alt"></i></div>
+        <h1>فودافون كاش</h1>
+        <p>نظام إدارة المبيعات</p>
+        <div class="login-version" style="font-size:12px; color:var(--text2); margin-top:6px;" id="login-version-display"></div>
+      </div>
+      <div id="form-login">
+        <div class="field-group">
+          <label>اسم المستخدم</label>
+          <div class="field-wrap">
+            <i class="fas fa-user field-icon"></i>
+            <input type="text" id="inp-username" placeholder="أدخل اسم المستخدم" autocomplete="username">
+          </div>
+        </div>
+        <div class="field-group">
+          <label>كلمة المرور</label>
+          <div class="field-wrap">
+            <i class="fas fa-lock field-icon"></i>
+            <input type="password" id="inp-password" placeholder="أدخل كلمة المرور" autocomplete="current-password" onkeydown="if(event.key==='Enter')App.doLogin()">
+            <button type="button" class="btn-eye" onclick="toggleEye()">
+              <i class="fas fa-eye" id="eye-icon"></i>
+            </button>
+          </div>
+        </div>
+        <div id="login-err" class="login-err" style="display:none"></div>
+        <button type="button" id="btn-login-submit" class="btn-login-submit" onclick="App.doLogin()">
+          <i class="fas fa-sign-in-alt"></i>
+          <span>تسجيل الدخول</span>
+        </button>
+      </div>
+      <div class="login-restore-section">
+        <button type="button" class="btn-restore-folder" onclick="Pages.chooseBackupDir()" title="استرجع بياناتك بالكامل من المجلد المحلي المحفوظ على جهازك عند تغيير المتصفح أو بعد مسح البيانات">
+          <i class="fas fa-folder-open"></i>
+          <span>ربط مجلد البيانات واستيرادها</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== MAIN APP ===== -->
+  <div id="pg-app" style="display:none">
+    <div id="sidebar-overlay" class="sidebar-overlay" onclick="closeSidebar()"></div>
+
+    <!-- Sidebar -->
+    <aside id="sidebar">
+      <div class="sb-header">
+        <div class="sb-logo">
+          <div class="sb-logo-icon"><i class="fas fa-mobile-alt"></i></div>
+          <span>فودافون كاش</span>
+        </div>
+        <button class="sb-close-btn" onclick="closeSidebar()"><i class="fas fa-times"></i></button>
+      </div>
+
+      <nav class="sb-nav" id="sb-nav"></nav>
+
+      <div class="sb-footer">
+        <div class="sb-branch-info" id="sb-branch-info"></div>
+        <div class="sb-version" style="text-align:center; font-size:12px; color:var(--text2); margin-bottom:10px;" id="sb-version-display"></div>
+        <button class="btn-logout" onclick="Auth.logout()">
+          <i class="fas fa-sign-out-alt"></i>
+          <span>تسجيل الخروج</span>
+        </button>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <div class="app-main" id="app-main">
+      <header class="topbar">
+        <div class="topbar-right">
+          <button class="btn-menu" onclick="openSidebar()"><i class="fas fa-bars"></i></button>
+          <div class="page-title" id="page-title">لوحة التحكم</div>
+        </div>
+        <div class="topbar-left">
+          <div class="branch-select-wrap" id="branch-select-wrap">
+            <i class="fas fa-store"></i>
+            <select id="sel-branch" onchange="App.setBranch(this.value)"></select>
+          </div>
+          <div class="clock" id="clock"></div>
+          <button class="btn-theme btn-backup-alert" id="btn-backup-alert" onclick="Pages.requestBackupDirPermission()" title="يلزم منح صلاحية الوصول لمجلد النسخ الاحتياطي التلقائي" style="display:none;">
+            <i class="fas fa-database"></i>
+          </button>
+          <button class="btn-theme" id="btn-theme" onclick="App.toggleTheme()" title="تغيير المظهر">
+            <i class="fas fa-sun" id="theme-icon"></i>
+          </button>
+          <div class="topbar-user">
+            <i class="fas fa-user-circle"></i>
+            <span id="topbar-username"></span>
+          </div>
+        </div>
+      </header>
+
+      <div class="page-content" id="page-content"></div>
+    </div>
+  </div>
+
+  <!-- Modal -->
+  <div id="modal-overlay" class="modal-overlay" style="display:none" onclick="closeModal(event)">
+    <div class="modal-box" id="modal-box"></div>
+  </div>
+
+  <!-- Sub-Modal for Cash Counter -->
+  <div id="submodal-overlay" class="modal-overlay" style="display:none; z-index:1000;" onclick="App.closeSubModal()">
+    <div class="modal-box" id="submodal-box" style="max-width:400px;" onclick="event.stopPropagation()"></div>
+  </div>
+
+  <!-- Toast -->
+  <div id="toast-wrap"></div>
+
+  <!-- ملف الإصدار — عدّله لما تطلع تحديث جديد -->
+  <script src="version.js"></script>
+  <script src="app.js"></script>
+
+  <!-- ===== نظام إدارة الأجهزة والمحافظ — Device Module ===== -->
+  <link rel="stylesheet" href="device-module.css">
+  <script src="services/firebase.service.js"></script>
+  <script src="services/adb.service.js"></script>
+  <script src="services/device.service.js"></script>
+  <script src="services/wallet.service.js"></script>
+  <script src="pages/device-dashboard-page.js"></script>
+  <script src="pages/device-manager-page.js"></script>
+  <script src="pages/wallet-numbers-page.js"></script>
+  <script src="device-module.js"></script>
+  <script src="mobile-nav.js"></script>
+
+  <!-- ===== PWA Service Worker Registration ===== -->
+  <script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./sw.js')
+        .then(reg => console.log('[PWA] Service Worker مسجل:', reg.scope))
+        .catch(err => console.warn('[PWA] فشل تسجيل SW:', err));
+    });
+  }
+  </script>
+</body>
+</html>

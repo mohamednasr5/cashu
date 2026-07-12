@@ -1,0 +1,355 @@
+/* ============================================================
+   Mobile Bottom Navigation Bar — شريط التنقل السفلي
+   يظهر فقط على الشاشات الصغيرة (≤ 768px)
+   ============================================================ */
+
+/* إخفاء الشريط على الشاشات الكبيرة */
+.mobile-bottom-nav {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  /* ===== إخفاء زر القائمة (الهامبرغر) على الموبايل ===== */
+  .btn-menu {
+    display: none !important;
+  }
+
+  /* ===== الشريط الرئيسي ===== */
+  .mobile-bottom-nav {
+    display: flex;
+    align-items: stretch;
+    justify-content: space-around;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 900;
+    height: 64px;
+    background: var(--bg2);
+    border-top: 1px solid var(--border);
+    padding: 0;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    box-shadow: 0 -4px 24px rgba(0,0,0,0.4);
+  }
+
+  /* ===== عنصر التنقل ===== */
+  .mbn-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    flex: 1;
+    border: none;
+    background: transparent;
+    color: var(--text3);
+    font-family: 'Cairo', sans-serif;
+    font-size: 10px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: color 0.2s ease, transform 0.15s ease;
+    padding: 6px 4px;
+    position: relative;
+    -webkit-tap-highlight-color: transparent;
+    outline: none;
+  }
+
+  .mbn-item i {
+    font-size: 19px;
+    transition: transform 0.2s ease, color 0.2s ease;
+  }
+
+  .mbn-item:active {
+    transform: scale(0.92);
+  }
+
+  .mbn-item.active {
+    color: var(--red);
+  }
+
+  .mbn-item.active i {
+    transform: scale(1.1);
+  }
+
+  /* مؤشر النشط (خط أحمر فوق العنصر) */
+  .mbn-item.active::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 20%;
+    right: 20%;
+    height: 3px;
+    background: var(--red);
+    border-radius: 0 0 3px 3px;
+    animation: slideDown 0.25s ease;
+  }
+
+  @keyframes slideDown {
+    from { transform: scaleX(0); }
+    to   { transform: scaleX(1); }
+  }
+
+  /* ===== زر المركز (إضافة عملية) ===== */
+  .mbn-center {
+    position: relative;
+    margin-top: -18px;
+  }
+
+  .mbn-center-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #ff1a2e 0%, #d60010 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 16px var(--red-glow), 0 0 0 4px var(--bg2);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    margin-bottom: 2px;
+  }
+
+  .mbn-center-icon i {
+    color: white !important;
+    font-size: 22px;
+  }
+
+  .mbn-center:active .mbn-center-icon {
+    transform: scale(0.9);
+  }
+
+  .mbn-center.active .mbn-center-icon {
+    box-shadow: 0 4px 20px rgba(230,0,18,0.5), 0 0 0 4px var(--bg2);
+  }
+
+  .mbn-center.active::before {
+    display: none;
+  }
+
+  /* ===== تعديلات خاصة بالموبايل ===== */
+
+  /* إخفاء الشريط في صفحة الدخول */
+  #pg-login ~ .mobile-bottom-nav,
+  #pg-login + .mobile-bottom-nav {
+    display: none !important;
+  }
+
+  /* منع تداخل المحتوى مع الشريط السفلي */
+  .app-main {
+    padding-bottom: 72px !important;
+    min-height: calc(100vh - var(--topbar-h)) !important;
+  }
+
+  /* تعديل الـ Topbar للموبايل */
+  .topbar {
+    padding: 0 10px !important;
+    height: 54px !important;
+  }
+
+  .topbar-right .page-title {
+    font-size: 15px !important;
+  }
+
+  /* إخفاء بعض عناصر الـ Topbar على الموبايل */
+  .topbar-left .branch-select-wrap {
+    display: none !important;
+  }
+
+  .topbar-left .clock {
+    display: none !important;
+  }
+
+  .topbar-left .topbar-user {
+    display: none !important;
+  }
+
+  /* تبسيط الـ Topbar */
+  .topbar-left {
+    gap: 6px !important;
+  }
+
+  /* تحسين عرض جداول الموبايل */
+  .dm-table-wrap,
+  .wn-table-wrap {
+    margin: 0 -12px;
+    border-radius: 0;
+    border-left: none;
+    border-right: none;
+  }
+
+  /* تحسين الـ Modal على الموبايل */
+  .modal-box {
+    width: 95vw !important;
+    max-height: 85vh !important;
+    margin: 8px auto !important;
+    border-radius: var(--radius) !important;
+    overflow-y: auto;
+  }
+
+  /* تحسين الـ Login Card */
+  .login-card {
+    width: 95vw !important;
+    padding: 30px 22px !important;
+    margin: 10px !important;
+  }
+
+  .login-logo h1 {
+    font-size: 22px !important;
+  }
+
+  /* إخفاء شريط التنقل في صفحة الدخول */
+  #pg-login ~ #mobile-bottom-nav,
+  body:has(#pg-login:not([style*="none"])) #mobile-bottom-nav,
+  body > #mobile-bottom-nav:has(+ #pg-login) {
+    display: none !important;
+  }
+
+  /* تعديلات إضافية للـ forms على الموبايل */
+  .field-wrap input,
+  .field-wrap select {
+    font-size: 16px !important; /* منع الـ zoom على iOS */
+  }
+
+  /* تحسين أزرار الموبايل */
+  .btn {
+    font-size: 13px !important;
+    padding: 10px 16px !important;
+  }
+
+  /* تحسين عرض صفحة إضافة المحافظ على الموبايل */
+  .wn-form-grid {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+  }
+
+  .wn-form-card {
+    padding: 16px !important;
+  }
+
+  /* تحسين إحصائيات الداشبورد على الموبايل */
+  .dd-stats-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 10px !important;
+  }
+
+  .dd-stat-card {
+    padding: 14px !important;
+    gap: 10px !important;
+  }
+
+  .dd-stat-icon {
+    width: 42px !important;
+    height: 42px !important;
+    font-size: 18px !important;
+  }
+
+  .dd-stat-value {
+    font-size: 20px !important;
+  }
+
+  .dd-row {
+    grid-template-columns: 1fr !important;
+  }
+
+  .dd-conn-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* تحسين شريط الأدوات على الموبايل */
+  .dm-toolbar,
+  .wn-toolbar {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 8px !important;
+  }
+
+  .dm-toolbar-right,
+  .dm-toolbar-left {
+    justify-content: space-between !important;
+  }
+
+  .dm-search-wrap,
+  .wn-search-wrap {
+    max-width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  .wn-carrier-filters {
+    overflow-x: auto !important;
+    flex-wrap: nowrap !important;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding-bottom: 4px;
+  }
+
+  .wn-carrier-filters::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* تحسين الـ Toast على الموبايل */
+  #toast-wrap {
+    bottom: 74px !important;
+    left: 8px !important;
+    right: 8px !important;
+  }
+
+  /* تحسين الـ update banner */
+  #update-banner {
+    font-size: 12px !important;
+  }
+
+  .update-banner-actions {
+    gap: 6px !important;
+  }
+
+  .btn-update-now,
+  .btn-update-later {
+    font-size: 12px !important;
+    padding: 8px 12px !important;
+  }
+}
+
+/* ===== شاشات صغيرة جداً (< 380px) ===== */
+@media (max-width: 380px) {
+  .mobile-bottom-nav {
+    height: 56px;
+  }
+
+  .mbn-item {
+    font-size: 9px;
+    gap: 2px;
+  }
+
+  .mbn-item i {
+    font-size: 17px;
+  }
+
+  .mbn-center-icon {
+    width: 42px;
+    height: 42px;
+  }
+
+  .mbn-center-icon i {
+    font-size: 19px;
+  }
+
+  .mbn-center {
+    margin-top: -14px;
+  }
+
+  .app-main {
+    padding-bottom: 64px !important;
+  }
+}
+
+/* ===== Light Theme ===== */
+html.light .mobile-bottom-nav {
+  background: rgba(255, 255, 255, 0.92);
+  border-top-color: rgba(0,0,0,0.06);
+  box-shadow: 0 -2px 16px rgba(0,0,0,0.06);
+}
+
+html.light .mbn-center-icon {
+  box-shadow: 0 4px 16px rgba(230,0,18,0.2), 0 0 0 4px rgba(255,255,255,0.92);
+}
