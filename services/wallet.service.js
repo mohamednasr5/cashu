@@ -22,7 +22,7 @@ const WalletService = (() => {
     /**
      * تهيئة خدمة المحافظ
      */
-    async init() {
+    async function init() {
         if (_initialized) return;
         _initialized = true;
 
@@ -42,7 +42,7 @@ const WalletService = (() => {
      * @param {Object} data
      * @returns {Promise<Object>}
      */
-    async addWallet(data) {
+    async function addWallet(data) {
         const phoneId = 'PH_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6).toUpperCase();
 
         const wallet = {
@@ -75,7 +75,7 @@ const WalletService = (() => {
      * @param {string} phoneId
      * @param {Object} updates
      */
-    async updateWallet(phoneId, updates) {
+    async function updateWallet(phoneId, updates) {
         const existing = _walletsCache[phoneId];
         if (!existing) return { success: false, error: 'المحفظة غير موجودة' };
 
@@ -92,7 +92,7 @@ const WalletService = (() => {
      * حذف محفظة
      * @param {string} phoneId
      */
-    async deleteWallet(phoneId) {
+    async function deleteWallet(phoneId) {
         const result = await FirebaseService.deleteWallet(phoneId);
         if (result.success) {
             delete _walletsCache[phoneId];

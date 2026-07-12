@@ -2,23 +2,9 @@
 <html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>نظام مبيعات فودافون كاش</title>
   <meta name="description" content="نظام متكامل لإدارة وحصر مبيعات فودافون كاش - سحب وإرسال أموال وكروت شحن">
-
-  <!-- ===== PWA Meta Tags ===== -->
-  <meta name="theme-color" content="#e60012">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="فودافون كاش">
-  <meta name="mobile-web-app-capable" content="yes">
-  <meta name="application-name" content="فودافون كاش">
-  <meta name="msapplication-TileColor" content="#e60012">
-  <meta name="msapplication-TileImage" content="icons/icon-144x144.png">
-  <link rel="manifest" href="manifest.json">
-  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
-  <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
-  <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <!-- Apply saved theme BEFORE render to prevent flash -->
   <script>
     (function(){
@@ -32,7 +18,6 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
   <link rel="stylesheet" href="style.css">
-  <link rel="stylesheet" href="mobile-nav.css">
 </head>
 <body>
 
@@ -195,17 +180,5 @@
   <script src="pages/device-manager-page.js"></script>
   <script src="pages/wallet-numbers-page.js"></script>
   <script src="device-module.js"></script>
-  <script src="mobile-nav.js"></script>
-
-  <!-- ===== PWA Service Worker Registration ===== -->
-  <script>
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('./sw.js')
-        .then(reg => console.log('[PWA] Service Worker مسجل:', reg.scope))
-        .catch(err => console.warn('[PWA] فشل تسجيل SW:', err));
-    });
-  }
-  </script>
 </body>
 </html>

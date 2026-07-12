@@ -15,7 +15,7 @@ const DeviceService = (() => {
     /**
      * تهيئة خدمة الأجهزة
      */
-    async init() {
+    async function init() {
         if (_initialized) return;
         _initialized = true;
 
@@ -133,7 +133,7 @@ const DeviceService = (() => {
     /**
      * حذف جهاز من Firebase والكاش
      */
-    async deleteDevice(deviceId) {
+    async function deleteDevice(deviceId) {
         delete _devicesCache[deviceId];
         await FirebaseService.deleteDevice(deviceId);
         _emit('deviceDeleted', { deviceId });
@@ -142,7 +142,7 @@ const DeviceService = (() => {
     /**
      * تحديث بيانات جهاز يدوياً
      */
-    async updateDevice(deviceId, updates) {
+    async function updateDevice(deviceId, updates) {
         const existing = _devicesCache[deviceId] || {};
         const merged = { ...existing, ...updates, updatedAt: Date.now() };
         _devicesCache[deviceId] = merged;

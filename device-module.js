@@ -32,7 +32,7 @@ const DeviceModule = (() => {
     /**
      * تهيئة الوحدة — تُستدعى مرة واحدة بعد تحميل التطبيق
      */
-    async function init() {
+    async init() {
         if (_initialized) return;
 
         // 1. تهيئة Firebase

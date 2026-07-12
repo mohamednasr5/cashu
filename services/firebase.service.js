@@ -27,7 +27,7 @@ const FirebaseService = (() => {
      * تهيئة اتصال Firebase
      * @returns {Promise<boolean>}
      */
-    async init() {
+    async function init() {
         if (_initialized && _db) return true;
         try {
             if (typeof firebase === 'undefined') {
@@ -104,7 +104,7 @@ const FirebaseService = (() => {
      * @param {string} deviceId
      * @param {Object} data
      */
-    async saveDevice(deviceId, data) {
+    async function saveDevice(deviceId, data) {
         await _ensureInit();
         try {
             const cleanData = { ...data, updatedAt: Date.now() };
@@ -121,7 +121,7 @@ const FirebaseService = (() => {
      * حذف جهاز
      * @param {string} deviceId
      */
-    async deleteDevice(deviceId) {
+    async function deleteDevice(deviceId) {
         await _ensureInit();
         try {
             await _ref(`devices/${deviceId}`).remove();
@@ -136,7 +136,7 @@ const FirebaseService = (() => {
      * الحصول على جميع الأجهزة
      * @returns {Promise<Object>}
      */
-    async getAllDevices() {
+    async function getAllDevices() {
         await _ensureInit();
         try {
             const snapshot = await _ref('devices').once('value');
@@ -152,7 +152,7 @@ const FirebaseService = (() => {
      * @param {Function} callback
      * @returns {Function} إلغاء الاشتراك
      */
-    onDevicesChange(callback) {
+    function onDevicesChange(callback) {
         _ensureInit().then(() => {
             const listener = _ref('devices').on('value', (snapshot) => {
                 callback(snapshot.val() || {});
@@ -172,7 +172,7 @@ const FirebaseService = (() => {
      * @param {string} phoneId
      * @param {Object} data
      */
-    async saveWallet(phoneId, data) {
+    async function saveWallet(phoneId, data) {
         await _ensureInit();
         try {
             const cleanData = { ...data, updatedAt: Date.now() };
@@ -189,7 +189,7 @@ const FirebaseService = (() => {
      * حذف محفظة
      * @param {string} phoneId
      */
-    async deleteWallet(phoneId) {
+    async function deleteWallet(phoneId) {
         await _ensureInit();
         try {
             await _ref(`phones/${phoneId}`).remove();
@@ -204,7 +204,7 @@ const FirebaseService = (() => {
      * الحصول على جميع المحافظ
      * @returns {Promise<Object>}
      */
-    async getAllWallets() {
+    async function getAllWallets() {
         await _ensureInit();
         try {
             const snapshot = await _ref('phones').once('value');
@@ -220,7 +220,7 @@ const FirebaseService = (() => {
      * @param {Function} callback
      * @returns {Function} إلغاء الاشتراك
      */
-    onWalletsChange(callback) {
+    function onWalletsChange(callback) {
         _ensureInit().then(() => {
             const listener = _ref('phones').on('value', (snapshot) => {
                 callback(snapshot.val() || {});
