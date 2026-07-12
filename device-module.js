@@ -2,7 +2,7 @@
  * Device Module — الوحدة الرئيسية لربط نظام إدارة الأجهزة بالتطبيق الحالي
  * يضيف الصفحات الجديدة للقائمة الجانبية ونظام التنقل بدون تعديل أي ملف موجود
  * ============================================================
- * الملفات المعدلة: index.html فقط (إضافة سكريبت واحد)
+ * الحل: حقن التنقل يتم أولاً BEFORE أي خدمة حتى لا يتعطل إذا فشل Firebase
  * ============================================================
  */
 'use strict';
@@ -14,7 +14,7 @@ const DeviceModule = (() => {
     let _originalBuildNav = null;
     let _originalNavigate = null;
 
-    // عناصر القائمة الجديدة — بدون شرط صلاحيات (تظهر دائماً لأي مستخدم مسجل)
+    // عناصر القائمة الجديدة
     const NEW_MENU_ITEMS = [
         { divider: true },
         { page: 'device-dashboard', icon: 'fa-tachometer-alt', label: 'لوحة الأجهزة' },
@@ -24,45 +24,65 @@ const DeviceModule = (() => {
 
     // صفحة مرجع الوجهات
     const NEW_ROUTES = {
-        'device-dashboard': () => DeviceDashboardPage.render(),
-        'device-manager':   () => DeviceManagerPage.render(),
-        'wallet-numbers':    () => WalletNumbersPage.render()
+        'device-dashboard': function() { DeviceDashboardPage.render(); },
+        'device-manager': function() { DeviceManagerPage.render(); },
+        'wallet-numbers': function() { WalletNumbersPage.render(); }
     };
 
     /**
-     * تهيئة الوحدة — تُستدعى مرة واحدة بعد تحميل التطبيق
+     * تهيئة الوحدة
+     * الخطوة 1: حقن التنقل فوراً (بدون انتظار Firebase)
+     * الخطوة 2: تهيئة الخدمات في الخلفية
      */
-    async function init() {
+    function init() {
         if (_initialized) return;
+        _initialized = true;
 
-        // 1. تهيئة Firebase
-        const fbOk = await FirebaseService.init();
-        console.log('[DeviceModule] Firebase:', fbOk ? 'متصل' : 'غير متصل');
-
-        // 2. تهيئة الخدمات
-        AdbService.init({
-            onDeviceUpdate: (device) => DeviceService.init(),
-            onConnectionChange: () => {}
-        });
-
-        await DeviceService.init();
-        await WalletService.init();
-
-        // 3. حقن العناصر الجديدة في التطبيق
+        // 1. حقن التنقل أولاً — هذا يضمن ظهور العناصر في القائمة
         _injectNavigation();
         _injectRoutes();
 
-        _initialized = true;
-        console.log('[DeviceModule] تم التهيئة بنجاح');
+        console.log('[DeviceModule] تم حقن التنقل بنجاح');
+
+        // 2. تهيئة الخدمات في الخلفية (غير مزامن)
+        _initServices().catch(function(err) {
+            console.warn('[DeviceModule] تحذير: بعض الخدمات لم تبدأ:', err.message);
+        });
+    }
+
+    /**
+     * تهيئة الخدمات في الخلفية
+     */
+    async function _initServices() {
+        try {
+            var fbOk = await FirebaseService.init();
+            console.log('[DeviceModule] Firebase:', fbOk ? 'متصل' : 'غير متصل');
+        } catch(e) {
+            console.warn('[DeviceModule] Firebase init error:', e.message);
+        }
+
+        try {
+            AdbService.init({
+                onDeviceUpdate: function(device) { DeviceService.init(); },
+                onConnectionChange: function() {}
+            });
+        } catch(e) {
+            console.warn('[DeviceModule] ADB init error:', e.message);
+        }
+
+        try { await DeviceService.init(); } catch(e) {}
+        try { await WalletService.init(); } catch(e) {}
+
+        console.log('[DeviceModule] تم تهيئة جميع الخدمات');
     }
 
     /**
      * حقن عناصر القائمة الجديدة في الـ Sidebar
-     * يوسع App._buildNav بإضافة العناصر الجديدة
      */
     function _injectNavigation() {
         if (typeof App === 'undefined' || !App._buildNav) {
-            console.warn('[DeviceModule] لم يتم العثور على App._buildNav');
+            console.warn('[DeviceModule] App._buildNav غير موجود بعد — سنعاوض لاحقاً');
+            setTimeout(_injectNavigation, 300);
             return;
         }
 
@@ -72,28 +92,37 @@ const DeviceModule = (() => {
         // استبدال الدالة بنسخة موسعة
         App._buildNav = function(permissions) {
             // استدعاء الدالة الأصلية أولاً
-            _originalBuildNav.call(this, permissions);
+            try {
+                _originalBuildNav.call(this, permissions);
+            } catch(e) {
+                console.warn('[DeviceModule] خطأ في _buildNav الأصلي:', e);
+            }
 
             // إضافة العناصر الجديدة
-            const nav = document.getElementById('sb-nav');
+            var nav = document.getElementById('sb-nav');
+            if (!nav) {
+                // محاولة ثانية بـ querySelector
+                nav = document.querySelector('.sb-nav');
+            }
             if (!nav) return;
 
-            NEW_MENU_ITEMS.forEach(item => {
+            NEW_MENU_ITEMS.forEach(function(item) {
                 if (item.divider) {
-                    nav.insertAdjacentHTML('beforeend',
-                        '<div class="sb-divider"></div>'
-                    );
+                    var divider = document.createElement('div');
+                    divider.className = 'sb-divider';
+                    nav.appendChild(divider);
                     return;
                 }
 
-                const link = document.createElement('a');
+                var link = document.createElement('a');
                 link.href = '#';
                 link.className = 'nav-item';
-                link.dataset.page = item.page;
-                link.innerHTML = `<i class="fas ${item.icon}"></i><span>${item.label}</span>`;
+                link.setAttribute('data-page', item.page);
+                link.innerHTML = '<i class="fas ' + item.icon + '"></i><span>' + item.label + '</span>';
 
-                link.addEventListener('click', (e) => {
+                link.addEventListener('click', function(e) {
                     e.preventDefault();
+                    e.stopPropagation();
                     if (typeof App !== 'undefined' && App.navigate) {
                         App.navigate(item.page);
                     } else {
@@ -104,12 +133,18 @@ const DeviceModule = (() => {
 
                 nav.appendChild(link);
             });
+
+            console.log('[DeviceModule] تمت إضافة عناصر القائمة الجديدة');
         };
 
-        // إعادة بناء القائمة إذا كان التطبيق يعمل بالفعل
-        const nav = document.getElementById('sb-nav');
+        // إعادة بناء القائمة إذا كان التطبيق يعمل بالفعل (المستخدم مسجل الدخول)
+        var nav = document.getElementById('sb-nav');
         if (nav && nav.children.length > 0) {
-            App._buildNav();
+            try {
+                App._buildNav();
+            } catch(e) {
+                console.warn('[DeviceModule] خطأ في إعادة بناء القائمة:', e);
+            }
         }
     }
 
@@ -118,7 +153,8 @@ const DeviceModule = (() => {
      */
     function _injectRoutes() {
         if (typeof App === 'undefined' || !App.navigate) {
-            console.warn('[DeviceModule] لم يتم العثور على App.navigate');
+            console.warn('[DeviceModule] App.navigate غير موجود بعد — سنعاوض لاحقاً');
+            setTimeout(_injectRoutes, 300);
             return;
         }
 
@@ -131,20 +167,22 @@ const DeviceModule = (() => {
             // التحقق من المسارات الجديدة أولاً
             if (NEW_ROUTES[pageKey]) {
                 _currentPage = pageKey;
-                const pageContent = document.getElementById('page-content');
-                const pageTitle = document.getElementById('page-title');
+                var pageContent = document.getElementById('page-content');
+                var pageTitle = document.getElementById('page-title');
 
                 if (pageContent) {
-                    // تنظيف الرسوم البيانية السابقة (إن وجدت)
+                    // تنظيف الرسوم البيانية السابقة
                     if (typeof App !== 'undefined' && App._chartInstances) {
-                        Object.values(App._chartInstances).forEach(c => { try { c.destroy(); } catch(e) {} });
-                        App._chartInstances = {};
+                        try {
+                            Object.values(App._chartInstances).forEach(function(c) { try { c.destroy(); } catch(e) {} });
+                            App._chartInstances = {};
+                        } catch(e) {}
                     }
                     pageContent.innerHTML = '';
                 }
 
                 if (pageTitle) {
-                    const titles = {
+                    var titles = {
                         'device-dashboard': 'لوحة تحكم الأجهزة',
                         'device-manager': 'Device Manager',
                         'wallet-numbers': 'Wallet Numbers'
@@ -153,36 +191,46 @@ const DeviceModule = (() => {
                 }
 
                 // تنشيط عنصر القائمة
-                document.querySelectorAll('#sb-nav .nav-item').forEach(item => {
-                    item.classList.toggle('active', item.dataset.page === pageKey);
+                document.querySelectorAll('#sb-nav .nav-item').forEach(function(item) {
+                    var isActive = item.getAttribute('data-page') === pageKey;
+                    item.classList.toggle('active', isActive);
                 });
 
                 // تنفيذ المسار الجديد
-                NEW_ROUTES[pageKey]();
+                try {
+                    NEW_ROUTES[pageKey]();
+                } catch(e) {
+                    console.error('[DeviceModule] خطأ في عرض الصفحة:', pageKey, e);
+                    if (pageContent) {
+                        pageContent.innerHTML = '<div style="padding:40px;text-align:center;color:var(--text2);"><i class="fas fa-exclamation-triangle" style="font-size:48px;margin-bottom:16px;display:block;color:var(--warning);"></i><p>حدث خطأ أثناء تحميل الصفحة</p><p style="font-size:12px;margin-top:8px;">' + e.message + '</p></div>';
+                    }
+                }
                 return;
             }
 
             // للمسارات الأصلية - استدعاء الدالة الأصلية
             return _originalNavigate.call(this, pageKey);
         };
+
+        console.log('[DeviceModule] تم حقن نظام التنقل');
     }
 
     /**
-     * التنقل الاحتياطي (إذا لم يتم العثور على App.navigate)
+     * التنقل الاحتياطي
      */
     function _fallbackNavigate(pageKey, label) {
         _destroyCurrentPage();
 
         if (NEW_ROUTES[pageKey]) {
             _currentPage = pageKey;
-            const pageContent = document.getElementById('page-content');
-            const pageTitle = document.getElementById('page-title');
+            var pageContent = document.getElementById('page-content');
+            var pageTitle = document.getElementById('page-title');
 
             if (pageTitle) pageTitle.textContent = label || pageKey;
             if (pageContent) pageContent.innerHTML = '';
 
-            document.querySelectorAll('#sb-nav .nav-item').forEach(item => {
-                item.classList.toggle('active', item.dataset.page === pageKey);
+            document.querySelectorAll('#sb-nav .nav-item').forEach(function(item) {
+                item.classList.toggle('active', item.getAttribute('data-page') === pageKey);
             });
 
             NEW_ROUTES[pageKey]();
@@ -193,10 +241,10 @@ const DeviceModule = (() => {
      * تدمير الصفحة الحالية
      */
     function _destroyCurrentPage() {
-        const destroyers = {
-            'device-manager': () => DeviceManagerPage.destroy(),
-            'wallet-numbers': () => WalletNumbersPage.destroy(),
-            'device-dashboard': () => DeviceDashboardPage.destroy()
+        var destroyers = {
+            'device-manager': function() { try { DeviceManagerPage.destroy(); } catch(e) {} },
+            'wallet-numbers': function() { try { WalletNumbersPage.destroy(); } catch(e) {} },
+            'device-dashboard': function() { try { DeviceDashboardPage.destroy(); } catch(e) {} }
         };
 
         if (_currentPage && destroyers[_currentPage]) {
@@ -210,16 +258,16 @@ const DeviceModule = (() => {
      */
     function cleanup() {
         _destroyCurrentPage();
-        AdbService.cleanup();
-        DeviceService.cleanup();
-        WalletService.cleanup();
-        FirebaseService.cleanup();
+        try { AdbService.cleanup(); } catch(e) {}
+        try { DeviceService.cleanup(); } catch(e) {}
+        try { WalletService.cleanup(); } catch(e) {}
+        try { FirebaseService.cleanup(); } catch(e) {}
         _initialized = false;
     }
 
     return {
-        init,
-        cleanup
+        init: init,
+        cleanup: cleanup
     };
 })();
 
@@ -229,19 +277,15 @@ const DeviceModule = (() => {
 (function waitForApp() {
     function tryInit() {
         if (typeof App !== 'undefined' && App._buildNav && App.navigate) {
-            // التطبيق جاهز - تهيئة الوحدة
-            DeviceModule.init().catch(err => {
-                console.error('[DeviceModule] خطأ في التهيئة:', err);
-            });
+            DeviceModule.init();
         } else {
-            // الانتظار و المحاولة مجدداً
-            setTimeout(tryInit, 300);
+            setTimeout(tryInit, 200);
         }
     }
 
     if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', () => setTimeout(tryInit, 500));
+        document.addEventListener('DOMContentLoaded', function() { setTimeout(tryInit, 300); });
     } else {
-        setTimeout(tryInit, 500);
+        setTimeout(tryInit, 300);
     }
 })();

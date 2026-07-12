@@ -5,10 +5,10 @@
  */
 
 const MobileNav = (() => {
-    let _injected = false;
-    let _currentPage = '';
+    var _injected = false;
+    var _currentPage = '';
 
-    const NAV_ITEMS = [
+    var NAV_ITEMS = [
         { page: 'dashboard',         icon: 'fa-tachometer-alt', label: 'الرئيسية' },
         { page: 'device-manager',    icon: 'fa-mobile-alt',    label: 'الأجهزة' },
         { page: 'newTransaction',    icon: 'fa-plus-circle',   label: 'جديد',    isCenter: true },
@@ -21,47 +21,34 @@ const MobileNav = (() => {
      */
     function inject() {
         if (_injected) return;
-        const pgApp = document.getElementById('pg-app');
+        var pgApp = document.getElementById('pg-app');
         if (!pgApp) { setTimeout(inject, 200); return; }
 
         // إنشاء الشريط
-        const nav = document.createElement('nav');
+        var nav = document.createElement('nav');
         nav.id = 'mobile-bottom-nav';
         nav.className = 'mobile-bottom-nav';
-        nav.innerHTML = NAV_ITEMS.map(item => {
+        nav.innerHTML = NAV_ITEMS.map(function(item) {
             if (item.isCenter) {
-                return `
-                <button class="mbn-item mbn-center" data-page="${item.page}" onclick="MobileNav.goTo('${item.page}')">
-                    <div class="mbn-center-icon">
-                        <i class="fas ${item.icon}"></i>
-                    </div>
-                    <span>${item.label}</span>
-                </button>`;
+                return '<button class="mbn-item mbn-center" data-page="' + item.page + '" onclick="MobileNav.goTo(\'' + item.page + '\')">' +
+                    '<div class="mbn-center-icon"><i class="fas ' + item.icon + '"></i></div>' +
+                    '<span>' + item.label + '</span></button>';
             }
-            return `
-            <button class="mbn-item" data-page="${item.page}" onclick="MobileNav.goTo('${item.page}')">
-                <i class="fas ${item.icon}"></i>
-                <span>${item.label}</span>
-            </button>`;
+            return '<button class="mbn-item" data-page="' + item.page + '" onclick="MobileNav.goTo(\'' + item.page + '\')">' +
+                '<i class="fas ' + item.icon + '"></i><span>' + item.label + '</span></button>';
         }).join('');
 
         pgApp.appendChild(nav);
 
         // إضافة مسافة سفلية للمحتوى لمنع التغطية
-        const style = document.createElement('style');
+        var style = document.createElement('style');
         style.id = 'mobile-nav-spacer';
-        style.textContent = `
-            @media (max-width: 768px) {
-                #pg-app { padding-bottom: 72px !important; }
-            }
-        `;
+        style.textContent = '@media (max-width: 768px) { #pg-app { padding-bottom: 72px !important; } }';
         if (!document.getElementById('mobile-nav-spacer')) {
             document.head.appendChild(style);
         }
 
         _injected = true;
-
-        // الاستماع لتغيير الصفحة لتحديث التنشيط
         _observePageChanges();
     }
 
@@ -73,7 +60,6 @@ const MobileNav = (() => {
             App.navigate(page);
         }
         setActive(page);
-        // إغلاق القائمة الجانبية إذا كانت مفتوحة
         if (typeof closeSidebar === 'function') closeSidebar();
     }
 
@@ -82,11 +68,13 @@ const MobileNav = (() => {
      */
     function setActive(page) {
         _currentPage = page;
-        document.querySelectorAll('.mbn-item').forEach(item => {
-            const itemPage = item.dataset.page;
-            const isActive = itemPage === page ||
-                             (page === 'newTransaction' && itemPage === 'transactions') ||
-                             (page === 'device-dashboard' && itemPage === 'device-manager');
+        document.querySelectorAll('.mbn-item').forEach(function(item) {
+            var itemPage = item.dataset.page;
+            var isActive = itemPage === page ||
+                             (page === 'new-transaction' && itemPage === 'newTransaction') ||
+                             (page === 'transactions' && itemPage === 'newTransaction') ||
+                             (page === 'device-dashboard' && itemPage === 'device-manager') ||
+                             (page === 'wallet-numbers' && itemPage === 'wallet-numbers');
             item.classList.toggle('active', isActive);
         });
     }
@@ -95,39 +83,39 @@ const MobileNav = (() => {
      * مراقبة تغييرات الصفحة من القائمة الجانبية
      */
     function _observePageChanges() {
-        // مراقبة عنوان الصفحة
-        const observer = new MutationObserver(() => {
-            const title = document.getElementById('page-title');
+        var observer = new MutationObserver(function() {
+            var title = document.getElementById('page-title');
             if (title) {
-                const titleText = title.textContent;
-                const pageMap = {
+                var titleText = title.textContent;
+                var pageMap = {
                     'لوحة التحكم': 'dashboard',
                     'العمليات': 'transactions',
                     'التقارير': 'reports',
                     'Device Manager': 'device-manager',
-                    'لوحة تحكم الأجهزة': 'device-manager',
+                    'لوحة تحكم الأجهزة': 'device-dashboard',
                     'Wallet Numbers': 'wallet-numbers'
                 };
-                for (const [key, page] of Object.entries(pageMap)) {
-                    if (titleText.includes(key)) {
-                        setActive(page);
+                var keys = Object.keys(pageMap);
+                for (var i = 0; i < keys.length; i++) {
+                    if (titleText.indexOf(keys[i]) !== -1) {
+                        setActive(pageMap[keys[i]]);
                         break;
                     }
                 }
             }
         });
 
-        const pageTitle = document.getElementById('page-title');
+        var pageTitle = document.getElementById('page-title');
         if (pageTitle) observer.observe(pageTitle, { childList: true, characterData: true, subtree: true });
     }
 
-    return { inject, goTo, setActive };
+    return { inject: inject, goTo: goTo, setActive: setActive };
 })();
 
-// حقق تلقائياً بعد تحميل التطبيق
+// حقن تلقائياً بعد تحميل التطبيق
 (function initMobileNav() {
     function tryInject() {
-        const pgApp = document.getElementById('pg-app');
+        var pgApp = document.getElementById('pg-app');
         if (pgApp) {
             MobileNav.inject();
         } else {
@@ -135,7 +123,7 @@ const MobileNav = (() => {
         }
     }
     if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', () => setTimeout(tryInject, 600));
+        document.addEventListener('DOMContentLoaded', function() { setTimeout(tryInject, 600); });
     } else {
         setTimeout(tryInject, 600);
     }

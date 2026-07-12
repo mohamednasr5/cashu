@@ -1,18 +1,18 @@
 /**
  * Firebase Service — خدمة الاتصال بقاعدة بيانات Firebase Realtime Database
- * يدير جميع عمليات القراءة والكتابة للحصول على بيانات الأجهزة والمحافظ
+ * يدير جميع عمليات القراءة والكتابة للأجهزة والمحافظ والخزينة والعمليات
  * ============================================================
  */
 'use strict';
 
 const FirebaseService = (() => {
 
-    let _db = null;
-    let _app = null;
-    let _initialized = false;
-    let _listeners = new Map();
+    var _db = null;
+    var _app = null;
+    var _initialized = false;
+    var _listeners = new Map();
 
-    const FIREBASE_CONFIG = {
+    var FIREBASE_CONFIG = {
         apiKey: "AIzaSyA0npWMzuk2eD1qilckDTET-nN3o0iPWmg",
         authDomain: "hammad-3fea4.firebaseapp.com",
         databaseURL: "https://hammad-3fea4-default-rtdb.firebaseio.com",
@@ -25,7 +25,6 @@ const FirebaseService = (() => {
 
     /**
      * تهيئة اتصال Firebase
-     * @returns {Promise<boolean>}
      */
     async function init() {
         if (_initialized && _db) return true;
@@ -49,47 +48,36 @@ const FirebaseService = (() => {
         }
     }
 
-    /**
-     * تحميل Firebase SDK ديناميكياً
-     */
     function _loadFirebaseSDK() {
-        return new Promise((resolve, reject) => {
+        return new Promise(function(resolve, reject) {
             if (typeof firebase !== 'undefined') { resolve(); return; }
-            const script = document.createElement('script');
+            var script = document.createElement('script');
             script.src = 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js';
-            script.onload = () => {
-                const dbScript = document.createElement('script');
+            script.onload = function() {
+                var dbScript = document.createElement('script');
                 dbScript.src = 'https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js';
                 dbScript.onload = resolve;
-                dbScript.onerror = () => reject(new Error('فشل تحميل Firebase Database SDK'));
+                dbScript.onerror = function() { reject(new Error('فشل تحميل Firebase Database SDK')); };
                 document.head.appendChild(dbScript);
             };
-            script.onerror = () => reject(new Error('فشل تحميل Firebase App SDK'));
+            script.onerror = function() { reject(new Error('فشل تحميل Firebase App SDK')); };
             document.head.appendChild(script);
         });
     }
 
-    /**
-     * الحصول على مرجع لقاعدة البيانات مع مسار المستخدم
-     * @param {string} path
-     * @returns {firebase.database.Reference}
-     */
     function _ref(path) {
-        const currentUser = _getCurrentUser();
+        var currentUser = _getCurrentUser();
         if (!currentUser) return _db.ref(path);
-        return _db.ref(`users/${currentUser}/${path}`);
+        return _db.ref('users/' + currentUser + '/' + path);
     }
 
-    /**
-     * الحصول على اسم المستخدم الحالي من النظام
-     */
     function _getCurrentUser() {
         try {
-            const usernameEl = document.getElementById('topbar-username');
+            var usernameEl = document.getElementById('topbar-username');
             if (usernameEl && usernameEl.textContent) {
                 return usernameEl.textContent.trim();
             }
-            const stored = localStorage.getItem('vc_user') || localStorage.getItem('currentUser');
+            var stored = localStorage.getItem('vc_user') || localStorage.getItem('currentUser');
             if (stored) {
                 try { return JSON.parse(stored).username; } catch(e) { return stored; }
             }
@@ -99,17 +87,12 @@ const FirebaseService = (() => {
 
     // ==================== عمليات الأجهزة ====================
 
-    /**
-     * حفظ أو تحديث بيانات جهاز
-     * @param {string} deviceId
-     * @param {Object} data
-     */
     async function saveDevice(deviceId, data) {
         await _ensureInit();
         try {
-            const cleanData = { ...data, updatedAt: Date.now() };
-            await _ref(`devices/${deviceId}`).set(cleanData);
-            _emit('deviceUpdated', { deviceId, data: cleanData });
+            var cleanData = Object.assign({}, data, { updatedAt: Date.now() });
+            await _ref('devices/' + deviceId).set(cleanData);
+            _emit('deviceUpdated', { deviceId: deviceId, data: cleanData });
             return { success: true, data: cleanData };
         } catch (error) {
             _emit('error', { source: 'saveDevice', error: error.message });
@@ -117,29 +100,21 @@ const FirebaseService = (() => {
         }
     }
 
-    /**
-     * حذف جهاز
-     * @param {string} deviceId
-     */
     async function deleteDevice(deviceId) {
         await _ensureInit();
         try {
-            await _ref(`devices/${deviceId}`).remove();
-            _emit('deviceDeleted', { deviceId });
+            await _ref('devices/' + deviceId).remove();
+            _emit('deviceDeleted', { deviceId: deviceId });
             return { success: true };
         } catch (error) {
             return { success: false, error: error.message };
         }
     }
 
-    /**
-     * الحصول على جميع الأجهزة
-     * @returns {Promise<Object>}
-     */
     async function getAllDevices() {
         await _ensureInit();
         try {
-            const snapshot = await _ref('devices').once('value');
+            var snapshot = await _ref('devices').once('value');
             return snapshot.val() || {};
         } catch (error) {
             _emit('error', { source: 'getAllDevices', error: error.message });
@@ -147,37 +122,27 @@ const FirebaseService = (() => {
         }
     }
 
-    /**
-     * الاستماع لتغييرات الأجهزة في الوقت الفعلي
-     * @param {Function} callback
-     * @returns {Function} إلغاء الاشتراك
-     */
     function onDevicesChange(callback) {
-        _ensureInit().then(() => {
-            const listener = _ref('devices').on('value', (snapshot) => {
+        _ensureInit().then(function() {
+            var listener = _ref('devices').on('value', function(snapshot) {
                 callback(snapshot.val() || {});
             });
-            _listeners.set('devices', () => _ref('devices').off('value', listener));
+            _listeners.set('devices', function() { _ref('devices').off('value', listener); });
         });
-        return () => {
-            const unsub = _listeners.get('devices');
+        return function() {
+            var unsub = _listeners.get('devices');
             if (unsub) unsub();
         };
     }
 
     // ==================== عمليات المحافظ ====================
 
-    /**
-     * حفظ أو تحديث محفظة
-     * @param {string} phoneId
-     * @param {Object} data
-     */
     async function saveWallet(phoneId, data) {
         await _ensureInit();
         try {
-            const cleanData = { ...data, updatedAt: Date.now() };
-            await _ref(`phones/${phoneId}`).set(cleanData);
-            _emit('walletUpdated', { phoneId, data: cleanData });
+            var cleanData = Object.assign({}, data, { updatedAt: Date.now() });
+            await _ref('phones/' + phoneId).set(cleanData);
+            _emit('walletUpdated', { phoneId: phoneId, data: cleanData });
             return { success: true, data: cleanData };
         } catch (error) {
             _emit('error', { source: 'saveWallet', error: error.message });
@@ -185,29 +150,21 @@ const FirebaseService = (() => {
         }
     }
 
-    /**
-     * حذف محفظة
-     * @param {string} phoneId
-     */
     async function deleteWallet(phoneId) {
         await _ensureInit();
         try {
-            await _ref(`phones/${phoneId}`).remove();
-            _emit('walletDeleted', { phoneId });
+            await _ref('phones/' + phoneId).remove();
+            _emit('walletDeleted', { phoneId: phoneId });
             return { success: true };
         } catch (error) {
             return { success: false, error: error.message };
         }
     }
 
-    /**
-     * الحصول على جميع المحافظ
-     * @returns {Promise<Object>}
-     */
     async function getAllWallets() {
         await _ensureInit();
         try {
-            const snapshot = await _ref('phones').once('value');
+            var snapshot = await _ref('phones').once('value');
             return snapshot.val() || {};
         } catch (error) {
             _emit('error', { source: 'getAllWallets', error: error.message });
@@ -215,69 +172,117 @@ const FirebaseService = (() => {
         }
     }
 
-    /**
-     * الاستماع لتغييرات المحافظ في الوقت الفعلي
-     * @param {Function} callback
-     * @returns {Function} إلغاء الاشتراك
-     */
     function onWalletsChange(callback) {
-        _ensureInit().then(() => {
-            const listener = _ref('phones').on('value', (snapshot) => {
+        _ensureInit().then(function() {
+            var listener = _ref('phones').on('value', function(snapshot) {
                 callback(snapshot.val() || {});
             });
-            _listeners.set('wallets', () => _ref('phones').off('value', listener));
+            _listeners.set('wallets', function() { _ref('phones').off('value', listener); });
         });
-        return () => {
-            const unsub = _listeners.get('wallets');
+        return function() {
+            var unsub = _listeners.get('wallets');
+            if (unsub) unsub();
+        };
+    }
+
+    // ==================== عمليات الخزينة ====================
+
+    async function getTreasury() {
+        await _ensureInit();
+        try {
+            var snapshot = await _ref('treasury').once('value');
+            var data = snapshot.val();
+            return data || { total: 0, history: {} };
+        } catch (error) {
+            return { total: 0, history: {} };
+        }
+    }
+
+    async function updateTreasury(amount, reason, phoneId) {
+        await _ensureInit();
+        try {
+            var treasury = await getTreasury();
+            var newTotal = (treasury.total || 0) + amount;
+            var txId = 'TX_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6).toUpperCase();
+
+            var txRecord = {
+                amount: amount,
+                reason: reason || '',
+                phoneId: phoneId || '',
+                timestamp: Date.now(),
+                balanceAfter: newTotal
+            };
+
+            // تحديث الخزينة
+            await _ref('treasury/total').set(newTotal);
+            await _ref('treasury/history/' + txId).set(txRecord);
+
+            _emit('treasuryUpdated', { txId: txId, amount: amount, total: newTotal, reason: reason });
+            return { success: true, txId: txId, total: newTotal };
+        } catch (error) {
+            _emit('error', { source: 'updateTreasury', error: error.message });
+            return { success: false, error: error.message };
+        }
+    }
+
+    function onTreasuryChange(callback) {
+        _ensureInit().then(function() {
+            var listener = _ref('treasury').on('value', function(snapshot) {
+                callback(snapshot.val() || { total: 0, history: {} });
+            });
+            _listeners.set('treasury', function() { _ref('treasury').off('value', listener); });
+        });
+        return function() {
+            var unsub = _listeners.get('treasury');
             if (unsub) unsub();
         };
     }
 
     // ==================== نظام الأحداث ====================
 
-    const _eventHandlers = new Map();
+    var _eventHandlers = new Map();
 
     function on(event, handler) {
         if (!_eventHandlers.has(event)) _eventHandlers.set(event, new Set());
         _eventHandlers.get(event).add(handler);
-        return () => _eventHandlers.get(event)?.delete(handler);
+        return function() { _eventHandlers.get(event) && _eventHandlers.get(event).delete(handler); };
     }
 
     function off(event, handler) {
-        _eventHandlers.get(event)?.delete(handler);
+        if (_eventHandlers.get(event)) _eventHandlers.get(event).delete(handler);
     }
 
     function _emit(event, data) {
-        const handlers = _eventHandlers.get(event);
-        if (handlers) handlers.forEach(h => { try { h(data); } catch(e) { console.error(e); } });
+        var handlers = _eventHandlers.get(event);
+        if (handlers) handlers.forEach(function(h) { try { h(data); } catch(e) { console.error(e); } });
     }
 
     async function _ensureInit() {
         if (!_initialized) await init();
     }
 
-    /**
-     * تنظيف جميع الاشتراكات
-     */
     function cleanup() {
-        _listeners.forEach(unsub => { try { unsub(); } catch(e) {} });
+        _listeners.forEach(function(unsub) { try { unsub(); } catch(e) {} });
         _listeners.clear();
         _eventHandlers.clear();
     }
 
     return {
-        init,
-        on,
-        off,
-        cleanup,
-        saveDevice,
-        deleteDevice,
-        getAllDevices,
-        onDevicesChange,
-        saveWallet,
-        deleteWallet,
-        getAllWallets,
-        onWalletsChange,
-        _getCurrentUser
+        init: init,
+        on: on,
+        off: off,
+        cleanup: cleanup,
+        saveDevice: saveDevice,
+        deleteDevice: deleteDevice,
+        getAllDevices: getAllDevices,
+        onDevicesChange: onDevicesChange,
+        saveWallet: saveWallet,
+        deleteWallet: deleteWallet,
+        getAllWallets: getAllWallets,
+        onWalletsChange: onWalletsChange,
+        getTreasury: getTreasury,
+        updateTreasury: updateTreasury,
+        onTreasuryChange: onTreasuryChange,
+        _getCurrentUser: _getCurrentUser
     };
 })();
