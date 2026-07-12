@@ -10,10 +10,10 @@ const MobileNav = (() => {
 
     const NAV_ITEMS = [
         { page: 'dashboard',         icon: 'fa-tachometer-alt', label: 'الرئيسية' },
-        { page: 'transactions',      icon: 'fa-exchange-alt',  label: 'العمليات' },
+        { page: 'device-manager',    icon: 'fa-mobile-alt',    label: 'الأجهزة' },
         { page: 'newTransaction',    icon: 'fa-plus-circle',   label: 'جديد',    isCenter: true },
-        { page: 'reports',           icon: 'fa-chart-bar',     label: 'التقارير' },
-        { page: 'device-manager',    icon: 'fa-mobile-alt',    label: 'الأجهزة' }
+        { page: 'wallet-numbers',    icon: 'fa-wallet',        label: 'المحافظ' },
+        { page: 'reports',           icon: 'fa-chart-bar',     label: 'التقارير' }
     ];
 
     /**

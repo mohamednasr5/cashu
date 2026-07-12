@@ -14,12 +14,12 @@ const DeviceModule = (() => {
     let _originalBuildNav = null;
     let _originalNavigate = null;
 
-    // عناصر القائمة الجديدة
+    // عناصر القائمة الجديدة — بدون شرط صلاحيات (تظهر دائماً لأي مستخدم مسجل)
     const NEW_MENU_ITEMS = [
         { divider: true },
-        { page: 'device-dashboard', icon: 'fa-tachometer-alt', label: 'لوحة الأجهزة', perm: 'viewDashboard' },
-        { page: 'device-manager', icon: 'fa-mobile-alt', label: 'Device Manager', perm: 'viewDashboard' },
-        { page: 'wallet-numbers', icon: 'fa-wallet', label: 'Wallet Numbers', perm: 'viewDashboard' }
+        { page: 'device-dashboard', icon: 'fa-tachometer-alt', label: 'لوحة الأجهزة' },
+        { page: 'device-manager', icon: 'fa-mobile-alt', label: 'Device Manager' },
+        { page: 'wallet-numbers', icon: 'fa-wallet', label: 'Wallet Numbers' }
     ];
 
     // صفحة مرجع الوجهات
@@ -78,8 +78,6 @@ const DeviceModule = (() => {
             const nav = document.getElementById('sb-nav');
             if (!nav) return;
 
-            const perms = permissions || (typeof Auth !== 'undefined' ? Auth.getPermissions() : {});
-
             NEW_MENU_ITEMS.forEach(item => {
                 if (item.divider) {
                     nav.insertAdjacentHTML('beforeend',
@@ -87,9 +85,6 @@ const DeviceModule = (() => {
                     );
                     return;
                 }
-
-                // التحقق من الأذونات
-                if (item.perm && perms && !perms[item.perm]) return;
 
                 const link = document.createElement('a');
                 link.href = '#';
@@ -114,9 +109,7 @@ const DeviceModule = (() => {
         // إعادة بناء القائمة إذا كان التطبيق يعمل بالفعل
         const nav = document.getElementById('sb-nav');
         if (nav && nav.children.length > 0) {
-            // التطبيق يعمل بالفعل - نعيد بناء القائمة
-            const perms = typeof Auth !== 'undefined' && Auth.getPermissions ? Auth.getPermissions() : {};
-            App._buildNav(perms);
+            App._buildNav();
         }
     }
 

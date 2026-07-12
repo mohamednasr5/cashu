@@ -29,21 +29,25 @@
 
             if (!user) {
                 // إنشاء المستخدم إذا لم يكن موجوداً
-                const adminPerms = Auth.PERMISSIONS && Auth.PERMISSIONS.admin
-                    ? Auth.PERMISSIONS.admin
+                // Auth.PERMISSIONS هي array، الصلاحيات الحقيقية في ROLE_DEFAULTS
+                const adminPerms = (Auth.ROLE_DEFAULTS && Auth.ROLE_DEFAULTS.admin)
+                    ? { ...Auth.ROLE_DEFAULTS.admin }
                     : {
                         viewDashboard: true,
-                        viewTransactions: true,
-                        newTransaction: true,
+                        addTransactions: true,
+                        editTransactions: true,
+                        deleteTransactions: true,
                         viewReports: true,
+                        exportReports: true,
+                        manageFees: true,
                         manageUsers: true,
-                        manageSuppliers: true,
-                        manageBackup: true,
                         viewProfits: true,
                         viewVault: true,
                         viewLatestTxns: true,
                         viewTxnsOnly: true,
-                        skipBackupPrompt: false
+                        manageSuppliers: true,
+                        manageBackup: true,
+                        skipBackupPrompt: true
                     };
 
                 DB.users.add({
@@ -68,7 +72,7 @@
                         active: true,
                         role: ADMIN_ROLE,
                         name: ADMIN_NAME,
-                        permissions: user.permissions || (Auth.PERMISSIONS && Auth.PERMISSIONS.admin) || {}
+                        permissions: user.permissions || (Auth.ROLE_DEFAULTS && Auth.ROLE_DEFAULTS.admin) || {}
                     });
                 }
             }
